@@ -124,6 +124,45 @@ const verifyAdmin = async (req, res, next) => {
         const result = await Menudatabase.find().toArray()
         res.send(result)
     })
+    app.post('/menu',verifyToken ,verifyAdmin,async(req,res)=>{
+      const menu = req.body;
+      const result = await Menudatabase.insertOne(menu)
+      res.send(result)
+    })
+    
+    app.get('/menu/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await Menudatabase.findOne(query);
+      res.send(result);
+    })
+
+    app.patch('/menu/:id',async(req,res)=>{
+      const id = req.params.id
+      const item = req.body
+      const filter = {_id: new ObjectId(id)}
+     
+      const updatedDoc = {
+        $set: {
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          recipe: item.recipe,
+          image: item.image
+        }
+      }
+      const result = await Menudatabase.updateOne(filter,updatedDoc)
+      res.send(result)
+    })
+
+    app.delete('/menu/:id',async(req,res)=>{
+      const id = req.params.id
+      const query = {_id:new ObjectId(id)}
+      const result = await Menudatabase.deleteOne(query)
+      res.send(result)
+    })
+
+   
 
     app.post('/carts',async(req,res)=>{
       const cart = req.body;
