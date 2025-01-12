@@ -1,6 +1,7 @@
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const cors = require('cors')
+const stripe = require("stripe")('sk_test_51QgJiCLxAsBYxwlHOvAlUvLLtCrDu89pqk7QI030rllm3wbFY6KYOxo7IbYG1WjkuSsp3hEM4kfteuVBrjBCy8DU00VxUaJuAY');
 const app = express()
 require('dotenv').config()
 const port = process.env.PORT || 3000
@@ -29,7 +30,25 @@ async function run() {
     const Menudatabase = client.db("bistroBossdb").collection("menudb");
     const cartsdatabase = client.db("bistroBossdb").collection("cartdb");
     
-   
+  // payment api 
+  
+  app.post('/create-payment-intent',async(req,res)=>{
+    const {price}=req.body
+    const amount = parseInt(price*100)
+    console.log(amount)
+    const paymentIntent = await stripe.paymentIntents.create({
+       amount:amount,
+       currency: "usd",
+       payment_method_types: [
+    "card",
+    
+  ],
+    })
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+
+    })
     
 // jwt releted api
 app.post('/jwt', async (req, res) => {
