@@ -29,27 +29,9 @@ async function run() {
     const userdatabase = client.db("bistroBossdb").collection("users");
     const Menudatabase = client.db("bistroBossdb").collection("menudb");
     const cartsdatabase = client.db("bistroBossdb").collection("cartdb");
+    const paydatabase = client.db("bistroBossdb").collection("pay");
     
-  // payment api 
   
-  app.post('/create-payment-intent',async(req,res)=>{
-    const {price}=req.body
-    const amount = parseInt(price*100)
-    console.log(amount)
-    const paymentIntent = await stripe.paymentIntents.create({
-       amount:amount,
-       currency: "usd",
-       payment_method_types: [
-    "card",
-    
-  ],
-    })
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
-
-    })
-    
 // jwt releted api
 app.post('/jwt', async (req, res) => {
   const user = req.body;
@@ -202,6 +184,58 @@ const verifyAdmin = async (req, res, next) => {
       const result = await cartsdatabase.deleteOne(query)
       res.send(result)
     })
+
+
+// payment api 
+  
+app.post('/create-payment-intent',async(req,res)=>{
+  const {price}=req.body
+  const amounts = parseInt(price*100)
+  const amount =Math.round(amounts)
+  console.log(amount)
+  const paymentIntent = await stripe.paymentIntents.create({
+     amount:amount,
+     currency: "usd",
+     payment_method_types: [
+  "card",
+  
+],
+  })
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+
+  })
+  app.get('/payments/:email', verifyToken, async (req, res) => {
+    const query = { email: req.params.email }
+    if (req.params.email !== req.decoded.email) {
+      return res.status(403).send({ message: 'forbidden access' });
+    }
+    const result = await paydatabase.find(query).toArray();
+    res.send(result);
+  })
+
+  app.post('/payments', async (req, res) => {
+    const payment = req.body;
+    const paymentResult = await paydatabase.insertOne(payment);
+
+    
+    console.log('payment info', payment);
+    const query = {
+      _id: {
+        $in: payment. cartsId.map(id => new ObjectId(id))
+      }
+    };
+
+    const deleteResult = await cartsdatabase.deleteMany(query);
+
+    res.send({ paymentResult, deleteResult });
+  })
+  
+
+
+
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
